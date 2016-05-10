@@ -1,5 +1,7 @@
 package ces33;
 
+import java.util.ArrayList;
+
 public class Logic {
 	
 	public String dectoBin(int dec){
@@ -37,5 +39,24 @@ public class Logic {
 		int numDes = numDes(memVirt);
 		int numQuadro = numQuadro(tabPag, numPag);
 		return (memFis[numQuadro][numDes]);
+	}
+	
+	public int searchTlb(int numPag, ArrayList<tlb> TLB){
+		int numQuad = -1;
+		for(int i=0; i<TLB.size(); i++){
+			if(TLB.get(i).getnumPag()==numPag){
+				numQuad = TLB.get(i).getnumQuad();
+			}
+		}
+		return numQuad;
+	}
+	
+	public void FIFO (ArrayList<tlb> TLB, tlb tlbEntry){
+		if (TLB.size() == 16){
+			TLB.remove(0);
+			TLB.add(tlbEntry);
+		}
+		else
+			TLB.add(tlbEntry);
 	}
 }

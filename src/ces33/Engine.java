@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
@@ -25,9 +26,13 @@ public class Engine {
 	    //test.readAlternateImpl(INPUT_FILE_NAME);
 	    //write it back out to a different file name
 		Logic Logica = new Logic();
+		ArrayList<tlb> TLB = new ArrayList<tlb>();
 		int[] tabPag = new int[256];
 		int[][] memFis = new int [256][256];
 		int numQuadro, endFisico, byteSinalizado;
+		int translatedAddresses = 0;
+		int PageFaults = 0;
+		int TLBHits = 0;
 		Arrays.fill(tabPag, -1);
 		for(int i=0; i<256; i++){
 			Arrays.fill(memFis[i], -1);
@@ -39,22 +44,42 @@ public class Engine {
 			try (BufferedWriter writer = Files.newBufferedWriter(output_path, charset)){
 			    String line = null;
 			    while ((line = reader.readLine()) != null) {
+			    	translatedAddresses++;
 			    	int memVirt = Integer.parseInt(line);
-			    	numQuadro = Logica.numQuadro(tabPag, Logica.numPag(memVirt));
-			    	if(numQuadro==-1){
-			    		int j;
-			    		for(j=0; memFis[j][0]!=-1 && j<256; j++);
-			    		numQuadro = j;
-			    		tabPag[Logica.numPag(memVirt)] = numQuadro;
-			    		for(int i=0; i<256; i++){
-			    			memFis[j][i] = fileContents[Logica.numPag(memVirt)*256 + i];
-			    		}
+			    	numQuadro = Logica.searchTlb(Logica.numPag(memVirt), TLB);
+			    	//Página não se encontra na TLB:
+			    	if (numQuadro==-1){
+				    	numQuadro = Logica.numQuadro(tabPag, Logica.numPag(memVirt));
+				    	//PageFault:
+				    	if(numQuadro==-1){
+				    		PageFaults++;
+				    		int j;
+				    		for(j=0; memFis[j][0]!=-1 && j<256; j++);
+				    		numQuadro = j;
+				    		tlb tlbEntry = new tlb(Logica.numPag(memVirt), numQuadro);
+				    		//Usando lógica FIFO de substituição de páginas:
+				    		Logica.FIFO(TLB, tlbEntry);
+				    		//Usando lógica FIFO de substituição de páginas:
+				    		//Logica.LRU(TLB, tlbEntry);
+				    		tabPag[Logica.numPag(memVirt)] = numQuadro;
+				    		for(int i=0; i<256; i++){
+				    			memFis[j][i] = fileContents[Logica.numPag(memVirt)*256 + i];
+				    		}
+				    	}
+			    	}
+			    	else{
+			    		TLBHits++;
 			    	}
 			    	endFisico = numQuadro*256+Logica.numDes(memVirt);
 			    	byteSinalizado = Logica.byteSinalizado(memFis, tabPag, memVirt);
 			    	String s = "Virtual address: " + memVirt + " Physical address: " + endFisico + " Value: " + byteSinalizado + "\n";
 			    	writer.write(s, 0, s.length());
 			    }
+			    writer.write("Number of Translated Addresses = " + translatedAddresses + "\n");
+			    writer.write("Page Faults = " + PageFaults + "\n");
+			    writer.write("Page Fault Rate = " + (float)PageFaults/translatedAddresses + "\n");
+			    writer.write("TLB Hits = " + TLBHits + "\n");
+			    writer.write("TLB Hit Rate = " + (float)TLBHits/translatedAddresses);
 		    } catch (IOException x) {
 	    		System.err.format("IOException: %s%n", x);
 		    }
@@ -64,7 +89,7 @@ public class Engine {
 	}
 	
 	/** Read the given binary file, and return its contents as a byte array.*/ 
-	byte[] read(String aInputFileName){
+	public byte[] read(String aInputFileName){
 		System.out.println("Reading in binary file named : " + aInputFileName);
 		File file = new File(aInputFileName);
 		System.out.println("File size: " + file.length());
