@@ -42,16 +42,15 @@ public class Logic {
 	}
 	
 	public int searchTlb(int numPag, ArrayList<tlb> TLB){
-		int numQuad = -1;
 		for(int i=0; i<TLB.size(); i++){
 			if(TLB.get(i).getnumPag()==numPag){
-				numQuad = TLB.get(i).getnumQuad();
+				return TLB.get(i).getnumQuad();
 			}
 		}
-		return numQuad;
+		return -1;
 	}
 	
-	public void FIFO (ArrayList<tlb> TLB, tlb tlbEntry){
+	public void FIFO (tlb tlbEntry, ArrayList<tlb> TLB){
 		if (TLB.size() == 16){
 			TLB.remove(0);
 			TLB.add(tlbEntry);

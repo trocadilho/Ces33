@@ -56,16 +56,16 @@ public class Engine {
 				    		int j;
 				    		for(j=0; memFis[j][0]!=-1 && j<256; j++);
 				    		numQuadro = j;
-				    		tlb tlbEntry = new tlb(Logica.numPag(memVirt), numQuadro);
-				    		//Usando lógica FIFO de substituição de páginas:
-				    		Logica.FIFO(TLB, tlbEntry);
-				    		//Usando lógica FIFO de substituição de páginas:
-				    		//Logica.LRU(TLB, tlbEntry);
 				    		tabPag[Logica.numPag(memVirt)] = numQuadro;
 				    		for(int i=0; i<256; i++){
 				    			memFis[j][i] = fileContents[Logica.numPag(memVirt)*256 + i];
 				    		}
 				    	}
+				    	tlb tlbEntry = new tlb(Logica.numPag(memVirt), numQuadro);
+			    		//Usando lógica FIFO de substituição de páginas:
+			    		Logica.FIFO(tlbEntry, TLB);
+			    		//Usando lógica FIFO de substituição de páginas:
+			    		//Logica.LRU(TLB, tlbEntry);
 			    	}
 			    	else{
 			    		TLBHits++;
